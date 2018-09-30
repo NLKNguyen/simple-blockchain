@@ -53,8 +53,10 @@ class Blockchain{
       block.height = height;
       // console.log('augmentBlock: height = ' + block.height);
 
-      // UTC timestamp
-      block.time = new Date().getTime().toString().slice(0,-3);
+      // Function to integrate creation time to a block
+      const setTime = (block) => {
+        block.time = new Date().getTime().toString().slice(0,-3); // UTC timestamp
+      };
 
       // Function to integrate hash value to a block
       const setHash = (block) => {
@@ -66,6 +68,7 @@ class Blockchain{
           this.getBlock(height - 1)
             .then((previousBlock) => {
               block.previousBlockHash = previousBlock.hash;
+              setTime(block);
               setHash(block);
               resolve(block);
             });
@@ -73,12 +76,14 @@ class Blockchain{
       } else { // need to add genesis block first
         return new Promise((resolve, reject) => { 
           let genesis = new Block("First block in the chain - Genesis block");
+          setTime(genesis);
           setHash(genesis);
 
           this.dbAdd(genesis)
             .then(() => {
               block.height += 1; // after the genesis
               block.previousBlockHash = genesis.hash;
+              setTime(block);
               setHash(block);
               resolve(block);
             });
