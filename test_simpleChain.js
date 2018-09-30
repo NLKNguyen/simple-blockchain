@@ -1,0 +1,2 @@
+let blockchain = new Blockchain();
+

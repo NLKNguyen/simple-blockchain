@@ -17,6 +17,9 @@ A simple private Blockchain implemented using `Node.js` -- project @ Udacity's B
 
 Due to the suggested development workflow in Node.js REPL (by the instructor), the following scripts are created for convenience in testing.
 
+* `test_simpleChain.js` simply provides blockchain context via `blockchain` variable. 
+* `repl_simpleChain.sh` (UNIX shell) opens Node.js REPL and runs `simpleChain.js` then `test_simpleChain.js`.
+
 * `test_populateChain.js` populates sample data for the blockchain. `simpleChain.js` must be loaded first.
 * `repl_populateChain.sh` (UNIX shell) opens Node.js REPL and runs `simpleChain.js` then `test_populateChain.js`. Previous persistent chain data will be deleted.
 

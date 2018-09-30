@@ -44,36 +44,20 @@ class Blockchain{
   // Add new block
   addBlock(newBlock){
 
-    // Misc. function to set up a given block with appropriate height and generated values
+    // Helper function to set up a given block with appropriate height and generated values
     const augmentBlock = (block, height) => {
-      // Reset values that shouldn't be set by client code
-      block.previousBlockHash = '';
 
-      // Block height
-      block.height = height;
-      // console.log('augmentBlock: height = ' + block.height);
-
-      // Function to integrate creation time to a block
+      // Reusable function to integrate creation time to a block
       const setTime = (block) => {
         block.time = new Date().getTime().toString().slice(0,-3); // UTC timestamp
       };
 
-      // Function to integrate hash value to a block
+      // Reusable function to integrate hash value to a block
       const setHash = (block) => {
         block.hash = SHA256(JSON.stringify(block)).toString();
       };
 
-      if (height > 0) { // has previous block
-        return new Promise((resolve, reject) => { 
-          this.getBlock(height - 1)
-            .then((previousBlock) => {
-              block.previousBlockHash = previousBlock.hash;
-              setTime(block);
-              setHash(block);
-              resolve(block);
-            });
-        }); 
-      } else { // need to add genesis block first
+      if (height == 0) { // need to add genesis block first
         return new Promise((resolve, reject) => { 
           let genesis = new Block("First block in the chain - Genesis block");
           setTime(genesis);
@@ -81,16 +65,25 @@ class Blockchain{
 
           this.dbAdd(genesis)
             .then(() => {
-              block.height += 1; // after the genesis
               block.previousBlockHash = genesis.hash;
+              block.height = 1; // first block after genesis
               setTime(block);
               setHash(block);
               resolve(block);
             });
 
         });
-      }
-
+      } else {
+        return new Promise((resolve, reject) => { 
+          this.getBlock(height).then(lastBlock => {
+              block.previousBlockHash = lastBlock.hash;
+              block.height = height + 1;
+              setTime(block);
+              setHash(block);
+              resolve(block);
+            });
+        }); 
+      } 
     };
 
     return this.getBlockHeight()
@@ -106,7 +99,8 @@ class Blockchain{
       this.db.createKeyStream()
         .on('data',  (data) => { i++; })
         .on('error', (err)  => { reject(err); })
-        .on('close', ()     => { resolve(i);  });
+        .on('close', ()     => { resolve(i > 0 ? (i - 1) : 0); }); 
+        // genesis block, if exists, doesn't count toward block height
     });
 
   }
@@ -150,7 +144,7 @@ class Blockchain{
     // return an array of blocks with issue; empty means no error is detected
     return this.getBlockHeight().then((height) => {
         const validations = []; // promises to fulfill
-        for (let i = 0; i < height; i++) {
+        for (let i = 0; i <= height; i++) {
           validations.push(this.validateBlock(i));
         }
         return Promise.all(validations).then(results => results.filter(Boolean)); // only keep real values (remove empty values)
